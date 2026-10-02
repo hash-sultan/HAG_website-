@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Huivex Auto Global"
+description = "A bilingual vehicle sourcing and export website for Huivex Auto Global, helping overseas dealers explore vehicles, understand export services, and request quotations."
+version = "1.0.0"
+id = "artifacts/huivex-auto"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19966
+
+[services.development]
+run = "pnpm --filter @workspace/huivex-auto run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/huivex-auto", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/huivex-auto/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19966"
+BASE_PATH = "/"
