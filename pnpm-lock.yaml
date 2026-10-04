@@ -226,6 +226,9 @@ importers:
       '@hookform/resolvers':
         specifier: ^3.10.0
         version: 3.10.0(react-hook-form@7.87.0(react@19.1.0))
+      '@playwright/test':
+        specifier: ^1.63.0
+        version: 1.63.0
       '@radix-ui/react-accordion':
         specifier: ^1.2.4
         version: 1.2.20(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -352,6 +355,9 @@ importers:
       date-fns:
         specifier: ^3.6.0
         version: 3.6.0
+      embla-carousel-fade:
+        specifier: 8.6.0
+        version: 8.6.0(embla-carousel@8.6.0)
       embla-carousel-react:
         specifier: ^8.6.0
         version: 8.6.0(react@19.1.0)
@@ -860,6 +866,11 @@ packages:
 
   '@pinojs/redact@0.4.0':
     resolution: {integrity: sha512-k2ENnmBugE/rzQfEcdWHcCY+/FM3VLzH9cYEsbdsoqrvzAKRhUZeRNhAZvB8OitQJ1TBed3yqWtdjzS6wJKBwg==}
+
+  '@playwright/test@1.63.0':
+    resolution: {integrity: sha512-oxMK4vllB9RK5NQ2l1pq1IfOf2AvnEuj/vYGDj0H2nMtmtZpKtCwt/l00GEO6xjGfpBNAvjovvYdCm50dRQkpQ==}
+    engines: {node: '>=20'}
+    hasBin: true
 
   '@radix-ui/number@1.1.3':
     resolution: {integrity: sha512-Road2bidD0uu/1BGDOWNdPI06g0lIRy6IF9GZcIrDK2KGItfor8IQwQa+yM2ERgHM1MmHxaxpTzk0/Jp42lNfA==}
@@ -2049,6 +2060,11 @@ packages:
   electron-to-chromium@1.5.425:
     resolution: {integrity: sha512-QvPtl41EUOnuT1HBvMKgxXRIaHNcagBPs50u7VULzhZXaGfqTbZyE16LQsctZ/RQHlGu+FOWeDTR4mY6YbeF1g==}
 
+  embla-carousel-fade@8.6.0:
+    resolution: {integrity: sha512-qaYsx5mwCz72ZrjlsXgs1nKejSrW+UhkbOMwLgfRT7w2LtdEB03nPRI06GHuHv5ac2USvbEiX2/nAHctcDwvpg==}
+    peerDependencies:
+      embla-carousel: 8.6.0
+
   embla-carousel-react@8.6.0:
     resolution: {integrity: sha512-0/PjqU7geVmo6F734pmPqpyHqiM99olvyecY7zdweCw+6tKEXnrE90pBiBbMMU8s5tICemzpQ3hi5EpxzGW+JA==}
     peerDependencies:
@@ -2600,6 +2616,16 @@ packages:
 
   pino@9.14.0:
     resolution: {integrity: sha512-8OEwKp5juEvb/MjpIc4hjqfgCNysrS94RIOMXYvpYCdm/jglrKEiAYmiumbmGhCvs+IcInsphYDFwqrjr7398w==}
+    hasBin: true
+
+  playwright-core@1.63.0:
+    resolution: {integrity: sha512-rYCsBF/M5HjUch52bbtVONEFjv6Xu8sm8h72dNlR5bzIE1fvC/bxgspzkjSfU+MweEMmPM8KJebG6nnyxo5mCg==}
+    engines: {node: '>=20'}
+    hasBin: true
+
+  playwright@1.63.0:
+    resolution: {integrity: sha512-+7ziBLidS4NaNCdt57SUDT+wYmmd5fmiQejUic/kb+YsYSCPyOOE9sebzMjNmQrsnNpDJqd4WHvV/8lfKfUDUg==}
+    engines: {node: '>=20'}
     hasBin: true
 
   postcss-selector-parser@6.0.10:
@@ -3423,6 +3449,10 @@ snapshots:
       - typescript
 
   '@pinojs/redact@0.4.0': {}
+
+  '@playwright/test@1.63.0':
+    dependencies:
+      playwright: 1.63.0
 
   '@radix-ui/number@1.1.3': {}
 
@@ -4578,6 +4608,10 @@ snapshots:
 
   electron-to-chromium@1.5.425: {}
 
+  embla-carousel-fade@8.6.0(embla-carousel@8.6.0):
+    dependencies:
+      embla-carousel: 8.6.0
+
   embla-carousel-react@8.6.0(react@19.1.0):
     dependencies:
       embla-carousel: 8.6.0
@@ -5133,6 +5167,12 @@ snapshots:
       safe-stable-stringify: 2.5.0
       sonic-boom: 4.2.1
       thread-stream: 3.1.0
+
+  playwright-core@1.63.0: {}
+
+  playwright@1.63.0:
+    dependencies:
+      playwright-core: 1.63.0
 
   postcss-selector-parser@6.0.10:
     dependencies:

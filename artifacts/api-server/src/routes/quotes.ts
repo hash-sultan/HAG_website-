@@ -1,6 +1,8 @@
 import { db, quoteInquiriesTable } from "@workspace/db";
 import { CreateQuoteBody, CreateQuoteResponse } from "@workspace/api-zod";
+import { eq } from "drizzle-orm";
 import { Router, type IRouter } from "express";
+import { sendQuoteEmails } from "./quote-email";
 
 const router: IRouter = Router();
 const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
@@ -25,6 +27,11 @@ router.post("/quotes", async (req, res): Promise<void> => {
     for (const [ip, entry] of requestWindows) {
       if (now - entry.startedAt >= RATE_LIMIT_WINDOW_MS) requestWindows.delete(ip);
     }
+  }
+
+  if (typeof req.body?.hp === "string" && req.body.hp.length > 0) {
+    res.status(201).json(CreateQuoteResponse.parse({ id: 0, createdAt: new Date() }));
+    return;
   }
 
   const parsed = CreateQuoteBody.safeParse(req.body);
@@ -59,12 +66,78 @@ router.post("/quotes", async (req, res): Promise<void> => {
         destination: input.destination?.trim() || null,
         message: input.message?.trim() || null,
         consent: input.consent,
+        emailStatus: "pending",
       })
       .returning({ id: quoteInquiriesTable.id, createdAt: quoteInquiriesTable.createdAt });
 
+    let emailStatus: "sent" | "partial" | "failed" = "failed";
+    try {
+      const delivery = await sendQuoteEmails({
+        id: inquiry.id,
+        locale: input.locale,
+        name,
+        company: input.company?.trim() || null,
+        country: input.country.toUpperCase(),
+        email,
+        phone,
+        inquiryType: input.inquiryType,
+        vehicles: input.vehicles.map((vehicle) => vehicle.trim()).filter(Boolean),
+        quantity: input.quantity ?? null,
+        destination: input.destination?.trim() || null,
+        message: input.message?.trim() || null,
+      });
+      emailStatus = delivery.emailStatus;
+
+      if (!delivery.configured) {
+        req.log.error(
+          { quoteId: inquiry.id, errorType: "resend_configuration_missing" },
+          "Quote email delivery is not configured",
+        );
+      }
+      for (const attempt of delivery.attempts) {
+        if (!attempt.ok) {
+          req.log.error(
+            {
+              quoteId: inquiry.id,
+              emailType: attempt.kind,
+              errorType: attempt.failure,
+              statusCode: attempt.statusCode,
+            },
+            "Quote email delivery failed",
+          );
+        }
+      }
+    } catch (error) {
+      req.log.error(
+        {
+          quoteId: inquiry.id,
+          errorType: error instanceof Error ? error.name : "unknown",
+        },
+        "Quote email delivery failed",
+      );
+    }
+
+    try {
+      await db
+        .update(quoteInquiriesTable)
+        .set({ emailStatus })
+        .where(eq(quoteInquiriesTable.id, inquiry.id));
+    } catch (error) {
+      req.log.error(
+        {
+          quoteId: inquiry.id,
+          errorType: error instanceof Error ? error.name : "unknown",
+        },
+        "Failed to update quote email status",
+      );
+    }
+
     res.status(201).json(CreateQuoteResponse.parse(inquiry));
   } catch (error) {
-    req.log.error({ err: error }, "Failed to store quote inquiry");
+    req.log.error(
+      { errorType: error instanceof Error ? error.name : "unknown" },
+      "Failed to store quote inquiry",
+    );
     res.status(500).json({ error: "Unable to save your inquiry. Please try again." });
   }
 });

@@ -16,6 +16,7 @@ export const quoteInquiriesTable = pgTable("quote_inquiries", {
   destination: varchar("destination", { length: 200 }),
   message: varchar("message", { length: 2000 }),
   consent: boolean("consent").notNull().default(false),
+  emailStatus: varchar("email_status", { length: 16 }).notNull().default("pending"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

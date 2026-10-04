@@ -1,5 +1,7 @@
-import { type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { type FormEvent, type KeyboardEvent as ReactKeyboardEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import useEmblaCarousel from 'embla-carousel-react';
+import Fade from 'embla-carousel-fade';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -168,12 +170,223 @@ function VehicleCard({ vehicle, index, t }: { vehicle: Vehicle; index: number; t
   return <article className="vehicle-card"><Link href={`/vehicles/${vehicle.slug}`} className="vehicle-image-link"><VehicleArt index={index} /><span className="category-tag">{zh ? categories[vehicle.category] || vehicle.category : vehicle.category}</span><span className="card-arrow"><ArrowUpRight size={18} /></span></Link><div className="vehicle-card-copy"><span className="vehicle-brand">{vehicle.brand}</span><h3>{vehicle.model}</h3><p>{zh ? descriptors[vehicle.descriptor] || vehicle.descriptor : vehicle.descriptor}</p><div className="card-meta"><span>{power}</span>{vehicle.confirm && <span className="confirm-tag">{zh ? '信息待确认' : 'Confirm details'}</span>}</div><div className="card-links"><Link href={`/vehicles/${vehicle.slug}`}>{t.details}<ArrowRight size={14} /></Link><Link href={`/contact?vehicle=${vehicle.slug}`}>{t.request}<ArrowUpRight size={14} /></Link></div></div></article>;
 }
 
+type HeroSlide = { small: string; title: string; text: string; action: string; href: string };
+
+function HeroCarousel({ slides, locale, scrollLabel }: { slides: HeroSlide[]; locale: Locale; scrollLabel: string }) {
+  const fadePlugins = useMemo(() => [Fade()], []);
+  const [viewportRef, emblaApi] = useEmblaCarousel({ loop: true, duration: 36 }, fadePlugins);
+  const [active, setActive] = useState(0);
+  const pausedFor = useRef(new Set<string>());
+  const autoplayTimer = useRef<number | null>(null);
+  const scheduleAutoplay = useRef<(delay: number) => void>(() => undefined);
+
+  const clearAutoplay = () => {
+    if (autoplayTimer.current !== null) window.clearTimeout(autoplayTimer.current);
+    autoplayTimer.current = null;
+  };
+  const pauseAutoplay = (reason: string) => {
+    pausedFor.current.add(reason);
+    clearAutoplay();
+  };
+  const resumeAutoplay = (reason: string) => {
+    pausedFor.current.delete(reason);
+    if (pausedFor.current.size === 0) scheduleAutoplay.current(2000);
+  };
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    const update = () => setActive(emblaApi.selectedScrollSnap());
+    update();
+    emblaApi.on('select', update);
+    emblaApi.on('reInit', update);
+    return () => {
+      emblaApi.off('select', update);
+      emblaApi.off('reInit', update);
+    };
+  }, [emblaApi]);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const schedule = (delay: number) => {
+      clearAutoplay();
+      if (motionPreference.matches || document.hidden || pausedFor.current.size > 0) return;
+      autoplayTimer.current = window.setTimeout(() => {
+        autoplayTimer.current = null;
+        if (document.hidden || pausedFor.current.size > 0) return;
+        emblaApi.scrollNext();
+        scheduleAutoplay.current(6500);
+      }, delay);
+    };
+    scheduleAutoplay.current = schedule;
+
+    const handleVisibility = () => {
+      if (document.hidden) pauseAutoplay('visibility');
+      else resumeAutoplay('visibility');
+    };
+    const handleMotionPreference = () => {
+      if (motionPreference.matches) pauseAutoplay('reduced-motion');
+      else resumeAutoplay('reduced-motion');
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    motionPreference.addEventListener('change', handleMotionPreference);
+    if (document.hidden) pauseAutoplay('visibility');
+    if (motionPreference.matches) pauseAutoplay('reduced-motion');
+    else schedule(6500);
+
+    return () => {
+      clearAutoplay();
+      scheduleAutoplay.current = () => undefined;
+      document.removeEventListener('visibilitychange', handleVisibility);
+      motionPreference.removeEventListener('change', handleMotionPreference);
+      pausedFor.current.clear();
+    };
+  }, [emblaApi]);
+
+  const moveByKey = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (!emblaApi || (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight')) return;
+    event.preventDefault();
+    if (event.key === 'ArrowLeft') emblaApi.scrollPrev();
+    else emblaApi.scrollNext();
+  };
+  const previousLabel = locale === 'en' ? 'Previous slide' : '上一张';
+  const nextLabel = locale === 'en' ? 'Next slide' : '下一张';
+
+  return <section className="hero" aria-label={locale === 'en' ? 'Featured introduction' : '精选介绍'}>
+    <div className="hero-image" aria-hidden="true" />
+    <div className="hero-grid" aria-hidden="true" />
+    <div
+      className="hero-viewport"
+      ref={viewportRef}
+      role="region"
+      aria-roledescription="carousel"
+      aria-label={locale === 'en' ? 'Featured introduction' : '精选介绍'}
+      tabIndex={0}
+      onKeyDown={moveByKey}
+      onMouseEnter={() => pauseAutoplay('hover')}
+      onMouseLeave={() => resumeAutoplay('hover')}
+      onFocusCapture={() => pauseAutoplay('focus')}
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) resumeAutoplay('focus');
+      }}
+      onPointerDownCapture={() => pauseAutoplay('pointer')}
+      onPointerUpCapture={() => resumeAutoplay('pointer')}
+      onPointerCancelCapture={() => resumeAutoplay('pointer')}
+    >
+      <div className="hero-track">
+        {slides.map((item, index) => <article
+          key={`${item.small}-${index}`}
+          className={`hero-slide ${index === active ? 'is-active' : ''}`}
+          role="group"
+          aria-roledescription="slide"
+          aria-label={`${index + 1} / ${slides.length}`}
+          aria-hidden={index !== active}
+          inert={index !== active}
+        >
+          <div className="wrap hero-content">
+            <div className="hero-kicker"><span />{item.small}</div>
+            <h1 className="font-display">{item.title.split('\\n').map((line, lineIndex) => <span key={`${index}-${lineIndex}`}>{line}</span>)}</h1>
+            <p>{item.text}</p>
+            <div className="hero-actions">
+              <Link href={item.href} className="button button-gold">{item.action}<ArrowUpRight size={16} /></Link>
+              <Link href="/contact" className="hero-secondary">{copy[locale].quote}<ArrowRight size={16} /></Link>
+            </div>
+          </div>
+        </article>)}
+      </div>
+    </div>
+    <div className="hero-pagination" aria-label={locale === 'en' ? 'Choose a slide' : '选择幻灯片'}>
+      {slides.map((item, index) => <button
+        key={`${item.small}-control-${index}`}
+        type="button"
+        onClick={() => emblaApi?.scrollTo(index)}
+        aria-label={locale === 'en' ? `Show slide ${index + 1}` : `显示第 ${index + 1} 张`}
+        aria-current={index === active ? 'true' : undefined}
+        className={index === active ? 'current' : ''}
+      ><span /></button>)}
+    </div>
+    <div className="hero-controls">
+      <span className="hero-index" aria-live="polite">0{active + 1} <i /> 0{slides.length}</span>
+      <div className="hero-arrows">
+        <button type="button" aria-label={previousLabel} onClick={() => emblaApi?.scrollPrev()}><ArrowLeft size={16} /></button>
+        <button type="button" aria-label={nextLabel} onClick={() => emblaApi?.scrollNext()}><ArrowRight size={16} /></button>
+      </div>
+    </div>
+    <a href="#intro" className="hero-scroll"><span>{scrollLabel}</span><ArrowDown size={15} /></a>
+  </section>;
+}
+
+function FeaturedCarousel({ t, locale }: { t: typeof copy.en; locale: Locale }) {
+  const featuredVehicles = vehicles.filter((vehicle) => vehicle.featured);
+  const options = useMemo(() => ({
+    align: 'center' as const,
+    containScroll: 'trimSnaps' as const,
+    dragFree: true,
+    loop: featuredVehicles.length > 1,
+  }), [featuredVehicles.length]);
+  const [viewportRef, emblaApi] = useEmblaCarousel(options);
+  const [active, setActive] = useState(0);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    const update = () => setActive(emblaApi.selectedScrollSnap());
+    update();
+    emblaApi.on('select', update);
+    emblaApi.on('reInit', update);
+    return () => {
+      emblaApi.off('select', update);
+      emblaApi.off('reInit', update);
+    };
+  }, [emblaApi]);
+
+  const previousLabel = locale === 'en' ? 'Previous vehicle' : '上一款车型';
+  const nextLabel = locale === 'en' ? 'Next vehicle' : '下一款车型';
+
+  return <div className="featured-carousel">
+    <div
+      className="featured-viewport"
+      ref={viewportRef}
+      role="region"
+      aria-roledescription="carousel"
+      aria-label={t.popularTitle}
+    >
+      <div className="featured-track">
+        {featuredVehicles.map((vehicle, index) => <div
+          className={`featured-slide ${index === active ? 'is-selected' : ''}`}
+          key={vehicle.slug}
+          role="group"
+          aria-roledescription="slide"
+          aria-label={locale === 'en' ? `${index + 1} of ${featuredVehicles.length}` : `${index + 1} / ${featuredVehicles.length}`}
+        >
+          <VehicleCard vehicle={vehicle} index={index} t={t} />
+        </div>)}
+      </div>
+    </div>
+    <div className="featured-controls">
+      <div className="featured-dots" aria-label={locale === 'en' ? 'Choose a vehicle' : '选择车型'}>
+        {featuredVehicles.map((vehicle, index) => <button
+          type="button"
+          key={vehicle.slug}
+          aria-label={locale === 'en' ? `Show ${vehicle.model}` : `显示${vehicle.model}`}
+          aria-current={index === active ? 'true' : undefined}
+          className={index === active ? 'current' : ''}
+          onClick={() => emblaApi?.scrollTo(index)}
+        ><span /></button>)}
+      </div>
+      <div className="featured-arrows">
+        <button type="button" aria-label={previousLabel} onClick={() => emblaApi?.scrollPrev()}><ArrowLeft size={16} /></button>
+        <button type="button" aria-label={nextLabel} onClick={() => emblaApi?.scrollNext()}><ArrowRight size={16} /></button>
+      </div>
+    </div>
+  </div>;
+}
+
 function HomePage({ locale, t }: { locale: Locale; t: typeof copy.en }) {
-  const [slide, setSlide] = useState(0);
-  const slides = [
+  const slides: HeroSlide[] = [
     { small: 'HUIVEX AUTO GLOBAL', title: locale === 'en' ? 'Cars beyond\\nborders.' : '车通\\n天下。', text: t.subtitle, action: t.browse, href: '/vehicles' },
     { small: locale === 'en' ? 'A considered range' : '多元车型', title: locale === 'en' ? 'EVs, SUVs, sedans,\\npickups and more.' : '新能源、SUV、轿车、\\n皮卡及更多车型。', text: locale === 'en' ? 'One export partner across brands and body types.' : '覆盖多品牌与多种车型的出口服务。', action: t.browse, href: '/vehicles' },
     { small: locale === 'en' ? 'One visible process' : '流程清晰可追踪', title: locale === 'en' ? 'From quote to shipment,\\nevery step in view.' : '从报价到装运，\\n每一步清晰可见。', text: locale === 'en' ? 'Quote, PI & payment, VIN check, export documents, loading, shipment.' : '报价、付款、车架号确认、出口资料、装车与装运。', action: t.process, href: '/services' },
+    { small: locale === 'en' ? 'Sourcing from China' : '从中国采购', title: locale === 'en' ? 'A clear route from\\nsourcing to shipment.' : '从车辆采购到装运，\\n流程清晰可见。', text: locale === 'en' ? 'Vehicle sourcing, documentation, loading and shipment coordination in one workflow.' : '在同一流程中协调车辆采购、文件准备、装车与运输。', action: t.process, href: '/services' },
   ];
   const benefitItems = locale === 'en' ? [
     ['01', 'Direct sourcing channels', 'Links with dealerships, traders and market resources across China.'],
@@ -190,26 +403,14 @@ function HomePage({ locale, t }: { locale: Locale; t: typeof copy.en }) {
     ['05', '透明检查沟通', '通过车辆视频、基础检查与装车确认提升采购信心。'],
     ['06', '出口流程协调', '在同一流程中协调报价、采购、文件、装车与售后支持。'],
   ];
-  useEffect(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    const timer = window.setInterval(() => setSlide((v) => (v + 1) % slides.length), 7000);
-    return () => window.clearInterval(timer);
-  }, [slides.length]);
-  const current = slides[slide];
   return <>
-    <section className="hero">
-      <div className="hero-image" />
-      <div className="hero-grid" />
-      <div className="wrap hero-content" key={`${slide}-${locale}`}><div className="hero-kicker"><span />{current.small}</div><h1 className="font-display">{current.title.split('\\n').map((line) => <span key={line}>{line}</span>)}</h1><p>{current.text}</p><div className="hero-actions"><Link href={current.href} className="button button-gold">{current.action}<ArrowUpRight size={16} /></Link><Link href="/contact" className="hero-secondary">{t.quote}<ArrowRight size={16} /></Link></div></div>
-      <div className="hero-pagination">{slides.map((item, i) => <button key={item.small} onClick={() => setSlide(i)} aria-label={`Show slide ${i + 1}`} className={i === slide ? 'current' : ''}><span /></button>)}</div>
-      <div className="hero-index">0{slide + 1} <i /> 0{slides.length}</div><a href="#intro" className="hero-scroll"><span>{t.scroll}</span><ArrowDown size={15} /></a>
-    </section>
+    <HeroCarousel slides={slides} locale={locale} scrollLabel={t.scroll} />
     <section className="trust-strip"><div className="wrap trust-grid">
       {[['6,000+', locale === 'en' ? 'vehicles exported since 2022*' : '自2022年以来累计出口车辆*'], ['24h', locale === 'en' ? 'fast response' : '快速响应'], ['1-stop', locale === 'en' ? 'export service' : '一站式出口服务'], ['VIN', locale === 'en' ? 'confirmation before loading' : '装运前确认车架号']].map(([value, label], i) => <div className="trust-item" key={value}><span className="trust-num">{value}</span><span>{label}</span><small>0{i + 1}</small></div>)}
     </div><div className="wrap credential-note">* {locale === 'en' ? 'Team track record wording pending client confirmation.' : '团队业绩表述待客户确认。'} <span>{locale === 'en' ? `Est. ${businessConfig.establishment} · Registered capital ${businessConfig.registeredCapital} · Xi’an, China` : `成立于${businessConfig.establishment} · 注册资本${businessConfig.registeredCapital} · 中国西安`}</span></div></section>
     <section id="intro" className="section-space intro-section"><div className="wrap intro-grid"><div className="intro-copy"><span className="eyebrow">{locale === 'en' ? 'What we do' : '我们的服务'}</span><h2 className="font-display">{locale === 'en' ? 'Sourcing from China, with the process in focus.' : '从中国采购，让每个环节清晰可见。'}</h2><p>{locale === 'en' ? 'A China-based automobile sourcing and export service provider. We connect vehicle sourcing, documentation, loading and shipment in one visible workflow.' : '立足中国的汽车车源及出口服务商。将车辆采购、文件准备、装车和运输协调纳入清晰流程。'}</p><Link href="/services" className="text-link">{locale === 'en' ? 'Explore our approach' : '了解服务流程'}<ArrowUpRight size={16} /></Link></div><div className="intro-visual"><div className="intro-visual-image"><VehicleArt index={2} /></div><div className="intro-visual-stamp"><span>HAG</span><small>XI’AN · CHINA</small></div><div className="intro-vertical">SOURCE / CONFIRM / SHIP</div></div></div>
       <div className="wrap pillar-grid">{[[PackageCheck,t.sourcing,'01'],[ShieldCheck,t.docs,'02'],[Ship,t.shipping,'03'],[CircleHelp,t.support,'04']].map(([Icon,label,no]) => <div className="pillar" key={String(no)}><span className="pillar-no">{String(no)}</span><Icon size={20} strokeWidth={1.5} /><span>{String(label)}</span></div>)}</div></section>
-    <section className="vehicles-feature section-space"><div className="wrap"><div className="section-heading"><div><span className="eyebrow">{t.popular}</span><h2 className="font-display">{t.popularTitle}</h2></div><Link className="text-link" href="/vehicles">{t.seeAll}<ArrowUpRight size={15} /></Link></div><div className="featured-grid">{vehicles.filter(v => v.featured).slice(0, 3).map((vehicle, i) => <VehicleCard key={vehicle.slug} vehicle={vehicle} index={i} t={t} />)}</div></div></section>
+    <section className="vehicles-feature section-space"><div className="wrap"><div className="section-heading"><div><span className="eyebrow">{t.popular}</span><h2 className="font-display">{t.popularTitle}</h2></div><Link className="text-link" href="/vehicles">{t.seeAll}<ArrowUpRight size={15} /></Link></div><FeaturedCarousel t={t} locale={locale} /></div></section>
     <ProcessBlock locale={locale} t={t} />
     <section className="markets-teaser"><div className="wrap markets-teaser-inner"><div><span className="eyebrow">{locale === 'en' ? 'Global reach' : '全球运输网络'}</span><h2 className="font-display">{t.marketsTitle}</h2><p>{locale === 'en' ? 'Road, container, RoRo and railway freight options. Flexible methods are selected based on destination, cost, urgency and market policy.' : '提供公路、集装箱、滚装船和铁路运输选择。根据目的地、成本、时效与市场政策灵活选择。'}</p><Link href="/markets" className="button button-outline-light">{locale === 'en' ? 'Explore markets' : '查看目标市场'}<ArrowUpRight size={16} /></Link></div><RouteGraphic /></div></section>
     <section className="section-space benefits"><div className="wrap"><div className="section-heading"><div><span className="eyebrow">{t.approach}</span><h2 className="font-display">{t.why}</h2></div></div><div className="benefit-grid">{benefitItems.map(([no, head, body]) => <article key={no} className="benefit-card"><span>{no}</span><h3>{head}</h3><p>{body}</p><ArrowUpRight size={16} /></article>)}</div><blockquote>{locale === 'en' ? 'For overseas dealers, good sourcing is not only about finding a car. It is about consistency in price, speed in confirmation, accuracy in specifications and confidence before shipment.' : '对于海外经销商而言，优质采购不仅是找到车辆，更关乎价格稳定、确认及时、信息准确，以及装运前的安心。'}</blockquote></div></section>
