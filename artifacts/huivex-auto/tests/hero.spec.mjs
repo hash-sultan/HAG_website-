@@ -154,7 +154,7 @@ test('hero selection, open navigation, and typed quote fields survive orientatio
   await expect(page.locator('.mobile-drawer')).toHaveClass(/drawer-open/);
   await expect(page.locator('.hero-pagination button[aria-current="true"]')).toHaveAttribute('aria-label', 'Show slide 2');
 
-  await page.getByRole('button', { name: 'Close menu' }).click();
+  await page.getByRole('button', { name: 'Close site menu' }).click();
   await page.goto('/contact');
   await page.locator('input[name="name"]').fill('Rotation Test');
   await page.locator('input[type="email"]').fill('rotation@example.test');
