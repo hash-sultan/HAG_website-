@@ -83,6 +83,8 @@ function Header({ locale, t, change }: { locale: Locale; t: typeof copy.en; chan
   const [open, setOpen] = useState(false);
   const [location] = useLocation();
   const drawerRef = useRef<HTMLDivElement>(null);
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  const wasOpenRef = useRef(false);
   useEffect(() => {
     const listener = () => setScrolled(window.scrollY > 24);
     window.addEventListener('scroll', listener, { passive: true }); listener();
@@ -99,24 +101,45 @@ function Header({ locale, t, change }: { locale: Locale; t: typeof copy.en; chan
     };
   }, [open]);
   useEffect(() => {
-    if (!open) return;
-    drawerRef.current?.querySelector<HTMLElement>('a,button')?.focus();
-    const trap = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') { setOpen(false); return; }
-      if (event.key !== 'Tab' || !drawerRef.current) return;
-      const controls = Array.from(drawerRef.current.querySelectorAll<HTMLElement>('a,button')).filter(el => !el.hasAttribute('disabled'));
-      const first = controls[0], last = controls[controls.length - 1];
-      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
-      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+    const root = document.getElementById('root');
+    if (!root) return;
+    if (open) {
+      root.setAttribute('aria-hidden', 'true');
+      root.setAttribute('inert', '');
+    } else {
+      root.removeAttribute('aria-hidden');
+      root.removeAttribute('inert');
+    }
+    return () => {
+      root.removeAttribute('aria-hidden');
+      root.removeAttribute('inert');
     };
-    document.addEventListener('keydown', trap);
-    return () => document.removeEventListener('keydown', trap);
+  }, [open]);
+  useEffect(() => {
+    if (open) {
+      drawerRef.current?.querySelector<HTMLElement>('a,button')?.focus();
+      const trap = (event: KeyboardEvent) => {
+        if (event.key === 'Escape') { setOpen(false); return; }
+        if (event.key !== 'Tab' || !drawerRef.current) return;
+        const controls = Array.from(drawerRef.current.querySelectorAll<HTMLElement>('a,button')).filter(el => !el.hasAttribute('disabled'));
+        const first = controls[0], last = controls[controls.length - 1];
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+      };
+      document.addEventListener('keydown', trap);
+      wasOpenRef.current = true;
+      return () => document.removeEventListener('keydown', trap);
+    } else if (wasOpenRef.current) {
+      wasOpenRef.current = false;
+      toggleRef.current?.focus();
+    }
+    return undefined;
   }, [open]);
   useEffect(() => { setOpen(false); }, [location]);
   const drawer = createPortal(
     <>
-      {open && <button className="drawer-backdrop" aria-label="Close navigation" onClick={() => setOpen(false)} />}
-      <div ref={drawerRef} className={`mobile-drawer ${open ? 'drawer-open' : ''}`} role="dialog" aria-modal={open} aria-label="Site menu" aria-hidden={!open} inert={!open}>
+      {open && <button className="drawer-backdrop" aria-label="Close navigation" tabIndex={-1} aria-hidden="true" onClick={() => setOpen(false)} />}
+      <div ref={drawerRef} className={`mobile-drawer ${open ? 'drawer-open' : ''}`} role="dialog" aria-modal="true" aria-label="Site menu" aria-hidden={!open} inert={!open ? true : undefined}>
         <div className="drawer-head">
           <Link href="/" className="brand drawer-brand" aria-label="Huivex Auto Global home"><BrandMark /><span className="brand-label">HUIVEX<small>AUTO GLOBAL, LTD</small></span></Link>
           <button className="menu-toggle drawer-close" aria-label="Close site menu" onClick={() => setOpen(false)}><X /></button>
@@ -134,7 +157,7 @@ function Header({ locale, t, change }: { locale: Locale; t: typeof copy.en; chan
       <div className="nav-actions">
         <button className="language-btn" onClick={() => change(locale === 'en' ? 'zh' : 'en')} aria-label="Switch language">{locale === 'en' ? '中文' : 'EN'} <ChevronDown size={13} /></button>
         <Link href="/contact" className="button button-gold header-cta">{t.quote}<ArrowUpRight size={15} /></Link>
-        <button className="menu-toggle" aria-label={open ? 'Close menu' : 'Open menu'} aria-expanded={open} onClick={() => setOpen(!open)}>{open ? <X /> : <Menu />}</button>
+        <button ref={toggleRef} className="menu-toggle" aria-label={open ? 'Close main navigation' : 'Open menu'} aria-expanded={open} onClick={() => setOpen(!open)}>{open ? <X /> : <Menu />}</button>
       </div>
     </div>
     {drawer}
