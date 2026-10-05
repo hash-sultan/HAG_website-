@@ -1,6 +1,7 @@
 import { defineConfig } from '@playwright/test';
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:19966';
+const chromiumPath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
 
 export default defineConfig({
   testDir: './tests',
@@ -13,15 +14,20 @@ export default defineConfig({
     headless: true,
     viewport: { width: 568, height: 320 },
     launchOptions: {
-      executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || '/repl/tools/bin/chromium',
+      ...(chromiumPath ? { executablePath: chromiumPath } : {}),
       args: ['--no-sandbox'],
     },
     trace: 'retain-on-failure',
   },
   webServer: {
-    command: 'PORT=19966 BASE_PATH=/ pnpm --filter @workspace/huivex-auto run dev',
+    command: 'corepack pnpm --filter @workspace/huivex-auto run dev',
     url: baseURL,
     reuseExistingServer: true,
     timeout: 120_000,
+    env: {
+      ...process.env,
+      PORT: '19966',
+      BASE_PATH: '/',
+    },
   },
 });

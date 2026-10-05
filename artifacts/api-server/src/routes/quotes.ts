@@ -1,7 +1,7 @@
 import { db, quoteInquiriesTable } from "@workspace/db";
 import { CreateQuoteBody, CreateQuoteResponse } from "@workspace/api-zod";
 import { eq } from "drizzle-orm";
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request } from "express";
 import { sendQuoteEmails } from "./quote-email";
 
 const router: IRouter = Router();
@@ -9,9 +9,17 @@ const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
 const RATE_LIMIT_MAX_REQUESTS = 5;
 const requestWindows = new Map<string, { startedAt: number; count: number }>();
 
+function clientIp(req: Request): string {
+  const forwarded = req.ip?.trim();
+  if (forwarded) return forwarded;
+  const socket = req.socket.remoteAddress?.trim();
+  if (socket) return socket;
+  return "unknown";
+}
+
 router.post("/quotes", async (req, res): Promise<void> => {
   const now = Date.now();
-  const key = req.ip || "unknown";
+  const key = clientIp(req);
   const window = requestWindows.get(key);
 
   if (!window || now - window.startedAt >= RATE_LIMIT_WINDOW_MS) {

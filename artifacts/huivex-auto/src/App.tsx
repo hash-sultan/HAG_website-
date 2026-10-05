@@ -1,4 +1,5 @@
 import { type FormEvent, type KeyboardEvent as ReactKeyboardEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import useEmblaCarousel from 'embla-carousel-react';
 import Fade from 'embla-carousel-fade';
@@ -9,7 +10,6 @@ import { useCreateQuote } from '@workspace/api-client-react';
 import type { QuoteInput } from '@workspace/api-client-react';
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUpRight, Check, ChevronDown, CircleHelp, Copy, Globe2, Menu, PackageCheck, Search, Ship, ShieldCheck, Truck, X } from 'lucide-react';
 import { Link, Route, Switch, useLocation, useParams, Router as WouterRouter } from 'wouter';
-import logo from '@assets/logo_1790941590485.jpeg';
 import { businessConfig, destinationCountries, vehicles, type Vehicle } from './data';
 
 const queryClient = new QueryClient();
@@ -66,6 +66,18 @@ function useLocale() {
   return { locale, t: copy[locale], change };
 }
 
+function BrandMark() {
+  return <img
+    className="brand-mark"
+    src="/brand/hag-mark-dark-128.png"
+    srcSet="/brand/hag-mark-dark-128.png 128w, /brand/hag-mark-dark.png 256w"
+    sizes="40px"
+    width={40}
+    height={40}
+    alt=""
+  />;
+}
+
 function Header({ locale, t, change }: { locale: Locale; t: typeof copy.en; change: (value: Locale) => void }) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
@@ -77,12 +89,18 @@ function Header({ locale, t, change }: { locale: Locale; t: typeof copy.en; chan
     return () => window.removeEventListener('scroll', listener);
   }, []);
   useEffect(() => {
+    const previousHtml = document.documentElement.style.overflow;
+    const previousBody = document.body.style.overflow;
+    document.documentElement.style.overflow = open ? 'hidden' : '';
     document.body.style.overflow = open ? 'hidden' : '';
-    return () => { document.body.style.overflow = ''; };
+    return () => {
+      document.documentElement.style.overflow = previousHtml;
+      document.body.style.overflow = previousBody;
+    };
   }, [open]);
   useEffect(() => {
     if (!open) return;
-    drawerRef.current?.querySelector<HTMLElement>('a')?.focus();
+    drawerRef.current?.querySelector<HTMLElement>('a,button')?.focus();
     const trap = (event: KeyboardEvent) => {
       if (event.key === 'Escape') { setOpen(false); return; }
       if (event.key !== 'Tab' || !drawerRef.current) return;
@@ -95,9 +113,23 @@ function Header({ locale, t, change }: { locale: Locale; t: typeof copy.en; chan
     return () => document.removeEventListener('keydown', trap);
   }, [open]);
   useEffect(() => { setOpen(false); }, [location]);
+  const drawer = createPortal(
+    <>
+      {open && <button className="drawer-backdrop" aria-label="Close navigation" onClick={() => setOpen(false)} />}
+      <div ref={drawerRef} className={`mobile-drawer ${open ? 'drawer-open' : ''}`} role="dialog" aria-modal={open} aria-label="Site menu" aria-hidden={!open} inert={!open}>
+        <div className="drawer-head">
+          <Link href="/" className="brand drawer-brand" aria-label="Huivex Auto Global home"><BrandMark /><span className="brand-label">HUIVEX<small>AUTO GLOBAL, LTD</small></span></Link>
+          <button className="menu-toggle drawer-close" aria-label="Close site menu" onClick={() => setOpen(false)}><X /></button>
+        </div>
+        <div className="drawer-links">{routes.map(([href, key], i) => <Link key={href} href={href} style={{ animationDelay: `${i * 45}ms` }}>{t[key]}<ArrowUpRight size={17} /></Link>)}</div>
+        <div className="drawer-foot"><button className="language-btn" onClick={() => change(locale === 'en' ? 'zh' : 'en')}>{locale === 'en' ? '中文' : 'English'} <Globe2 size={16} /></button><Link className="button button-gold" href="/contact">{t.quote}<ArrowRight size={16} /></Link><p>Huivex Auto Global, Ltd. · Xi’an, China</p></div>
+      </div>
+    </>,
+    document.body,
+  );
   return <header className={`site-header ${scrolled || location !== '/' ? 'is-solid' : ''}`}>
     <div className="nav-inner wrap">
-      <Link href="/" className="brand" aria-label="Huivex Auto Global home"><img src={logo} alt="" /><span className="brand-label">HUIVEX<small>AUTO GLOBAL, LTD</small></span></Link>
+      <Link href="/" className="brand" aria-label="Huivex Auto Global home"><BrandMark /><span className="brand-label">HUIVEX<small>AUTO GLOBAL, LTD</small></span></Link>
       <nav className="desktop-nav" aria-label="Primary navigation">{routes.map(([href, key]) => <Link key={href} href={href} className={`nav-link ${location === href ? 'active' : ''}`}>{t[key]}</Link>)}</nav>
       <div className="nav-actions">
         <button className="language-btn" onClick={() => change(locale === 'en' ? 'zh' : 'en')} aria-label="Switch language">{locale === 'en' ? '中文' : 'EN'} <ChevronDown size={13} /></button>
@@ -105,18 +137,14 @@ function Header({ locale, t, change }: { locale: Locale; t: typeof copy.en; chan
         <button className="menu-toggle" aria-label={open ? 'Close menu' : 'Open menu'} aria-expanded={open} onClick={() => setOpen(!open)}>{open ? <X /> : <Menu />}</button>
       </div>
     </div>
-    <div ref={drawerRef} className={`mobile-drawer ${open ? 'drawer-open' : ''}`} aria-hidden={!open} inert={!open}>
-      <div className="drawer-links">{routes.map(([href, key], i) => <Link key={href} href={href} style={{ animationDelay: `${i * 45}ms` }}>{t[key]}<ArrowUpRight size={17} /></Link>)}</div>
-      <div className="drawer-foot"><button className="language-btn" onClick={() => change(locale === 'en' ? 'zh' : 'en')}>{locale === 'en' ? '中文' : 'English'} <Globe2 size={16} /></button><Link className="button button-gold" href="/contact">{t.quote}<ArrowRight size={16} /></Link><p>Huivex Auto Global, Ltd. · Xi’an, China</p></div>
-    </div>
-    {open && <button className="drawer-backdrop" aria-label="Close navigation" onClick={() => setOpen(false)} />}
+    {drawer}
   </header>;
 }
 
 function Footer({ t, locale }: { t: typeof copy.en; locale: Locale }) {
   return <footer className="footer">
     <div className="wrap footer-main">
-      <div className="footer-brand"><img src={logo} alt="Huivex Auto Global" /><p>{locale === 'en' ? 'Cars Beyond Borders' : '车通天下'}<br />{locale === 'en' ? 'Vehicle sourcing and export from China.' : '立足中国的汽车采购与出口服务。'}</p></div>
+      <div className="footer-brand"><img src="/brand/hag-logo-full-dark.png" width={180} height={48} alt="Huivex Auto Global" /><p>{locale === 'en' ? 'Cars Beyond Borders' : '车通天下'}<br />{locale === 'en' ? 'Vehicle sourcing and export from China.' : '立足中国的汽车采购与出口服务。'}</p></div>
       <div className="footer-column"><span className="eyebrow">{locale === 'en' ? 'Explore' : '探索'}</span>{routes.slice(1, 6).map(([href, key]) => <Link key={href} href={href}>{t[key]}</Link>)}</div>
       <div className="footer-column"><span className="eyebrow">{locale === 'en' ? 'Company' : '公司'}</span><Link href="/contact">{t.contact}</Link><Link href="/privacy">{locale === 'en' ? 'Privacy' : '隐私政策'}</Link><Link href="/terms">{locale === 'en' ? 'Terms' : '使用条款'}</Link></div>
       <div className="footer-note"><div className="footer-stamp">HAG <span>·</span> XI’AN</div><p>{locale === 'en' ? 'Trusted vehicle sourcing · Export documentation · Loading & shipment · After-sales support' : '车辆采购 · 出口文件 · 装运协调 · 售后支持'}</p><Link href="/contact" className="text-link">{t.quote}<ArrowUpRight size={15} /></Link></div>
@@ -126,7 +154,7 @@ function Footer({ t, locale }: { t: typeof copy.en; locale: Locale }) {
 }
 
 function PageFrame({ children, locale, t, change }: { children: ReactNode; locale: Locale; t: typeof copy.en; change: (value: Locale) => void }) {
-  return <><Header locale={locale} t={t} change={change} /><main>{children}</main><Footer t={t} locale={locale} /><QuickActions t={t} /></>;
+  return <div className="page-shell"><Header locale={locale} t={t} change={change} /><main>{children}</main><Footer t={t} locale={locale} /><QuickActions t={t} /></div>;
 }
 
 function QuickActions({ t }: { t: typeof copy.en }) {

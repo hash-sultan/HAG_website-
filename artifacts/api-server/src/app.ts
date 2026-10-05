@@ -6,6 +6,16 @@ import { logger } from "./lib/logger";
 
 const app: Express = express();
 
+const trustProxy = process.env.TRUST_PROXY?.trim();
+if (trustProxy && trustProxy !== "false" && trustProxy !== "0") {
+  if (trustProxy === "true") {
+    app.set("trust proxy", 1);
+  } else {
+    const hops = Number(trustProxy);
+    app.set("trust proxy", Number.isInteger(hops) && hops >= 1 ? hops : trustProxy);
+  }
+}
+
 app.use(
   pinoHttp({
     logger,
