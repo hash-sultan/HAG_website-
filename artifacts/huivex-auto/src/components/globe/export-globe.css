@@ -1,0 +1,90 @@
+/* ExportGlobe — layout + controls. The globe itself is drawn on <canvas>. */
+
+.globe-stage {
+  position: relative;
+  width: 100%;
+  max-width: 640px;
+  aspect-ratio: 1 / 1;
+  margin-inline: auto;
+}
+
+.globe-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  touch-action: pan-y;      /* vertical page scroll still works on touch; horizontal drag spins */
+  user-select: none;
+  -webkit-user-select: none;
+}
+.globe-canvas:active { cursor: grabbing; }
+
+.globe-hint {
+  position: absolute;
+  top: 4%;
+  right: 4%;
+  font: 700 10px/1 "Space Mono", ui-monospace, monospace;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+  pointer-events: none;
+}
+
+.globe-recenter {
+  position: absolute;
+  left: 50%;
+  bottom: 2%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  font: 700 10px/1 "Space Mono", ui-monospace, monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.75);
+  background: rgba(6, 7, 9, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+.globe-recenter:hover,
+.globe-recenter:focus-visible {
+  color: #fff;
+  border-color: rgba(247, 200, 60, 0.7);
+  background: rgba(6, 7, 9, 0.9);
+}
+
+/* ---- Globe variant of the existing .route-graphic panel ----
+   Keeps your navy background, .map-grid overlay and .route-caption; only
+   sizing/stacking is overridden. Higher specificity than the .markets-page
+   and mobile rules so they don't fight it. */
+.route-graphic.route-graphic--globe,
+.markets-page .route-graphic.route-graphic--globe {
+  position: relative;
+  display: block;
+  height: clamp(380px, 46vw, 560px);
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+}
+.route-graphic--globe .map-grid { pointer-events: none; }
+.route-graphic--globe .route-caption {
+  position: absolute;
+  left: 18px;
+  bottom: 16px;
+  z-index: 2;
+  pointer-events: none;
+}
+/* Your .route-graphic svg rules must not resize the recenter icon */
+.route-graphic .globe-recenter svg {
+  width: 12px;
+  height: 12px;
+  max-width: none;
+}
+@media (max-width: 640px) {
+  .route-graphic.route-graphic--globe,
+  .markets-page .route-graphic.route-graphic--globe { height: 380px; }
+  .route-graphic--globe .route-caption { display: none; }
+}
