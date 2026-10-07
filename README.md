@@ -45,7 +45,7 @@ Launch PostgreSQL via Docker Compose:
 docker compose up -d
 ```
 
-Push the database schema with Drizzle Kit:
+Apply schema changes and migrations to the local PostgreSQL database using Drizzle Kit:
 
 ```bash
 pnpm --filter @workspace/db run push

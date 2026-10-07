@@ -46,6 +46,11 @@
    - Created root `README.md` documenting architecture, prerequisites, local setup (Docker Compose, `.env`, pnpm run commands), mobile phone Wi-Fi network testing, test runner commands, and doc references.
    - Updated `docs/OPEN_QUESTIONS.md` (and synced `artifacts/huivex-auto/OPEN_QUESTIONS.md`) covering Resend domain and sender verification, client contact details, English office address, vehicle launch roster, new vs used positioning, deck photography rights, brand logo usage rights, team track record wording ("6,000+"), privacy/terms approval, and production domain rollout.
 
+## Live End-to-End Verification & Database Migration (Completed)
+- **Database Push**: Applied schema change to the live local PostgreSQL instance using `pnpm --filter @workspace/db run push`. Confirmed the presence of the `other_vehicle varchar(300)` column via PostgreSQL table inspection. Clarified the exact migration command in `README.md`.
+- **Contact Sidebar Notice**: Restored `<small className="pending-label">PUBLIC CONTACT DETAILS PENDING APPROVAL</small>` to `artifacts/huivex-auto/src/App.tsx`.
+- **Live End-to-End Test (No Mocks)**: Sent a real `POST /api/quotes` request with `otherVehicle: "BYD Yangwang U9 supercar in bespoke yellow"`. Received HTTP 201 (`id: 4`). Verified row in PostgreSQL with `other_vehicle` populated and confirmed transactional email delivery via Resend API (`email_status: "sent"`).
+
 ## Launch Checklist
 - [ ] Remove `<meta name="robots" content="noindex, nofollow">` from `index.html`
 - [ ] Remove `Disallow: /` from `public/robots.txt` and allow search engine indexing
