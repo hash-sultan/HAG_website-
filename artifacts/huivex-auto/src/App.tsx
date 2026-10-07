@@ -10,7 +10,7 @@ import { useCreateQuote } from '@workspace/api-client-react';
 import type { QuoteInput } from '@workspace/api-client-react';
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUpRight, Check, ChevronDown, CircleHelp, Copy, Globe2, Menu, PackageCheck, Search, Ship, ShieldCheck, Truck, X } from 'lucide-react';
 import { Link, Route, Switch, useLocation, useParams, Router as WouterRouter } from 'wouter';
-import { businessConfig, destinationCountries, vehicles, type Vehicle } from './data';
+import { activeVehicles, businessConfig, destinationCountries, vehicles, type Vehicle } from './data';
 
 const queryClient = new QueryClient();
 type Locale = 'en' | 'zh';
@@ -210,15 +210,15 @@ function PageIntro({ eyebrow, title, text }: { eyebrow: string; title: string; t
 }
 
 function VehicleArt({ index = 0, compact = false }: { index?: number; compact?: boolean }) {
-  return <div className={`vehicle-art art-${index % 6} ${compact ? 'art-compact' : ''}`} role="img" aria-label="Illustrative vehicle placeholder, vehicle photography pending approval"><div className="art-label">HAG / EXPORT SERIES</div><div className="art-road" /><div className="art-car"><i /><b /><span /></div><div className="art-coordinate">34°20′N<br />108°56′E</div></div>;
+  return <div className={`vehicle-art art-${index % 6} ${compact ? 'art-compact' : ''}`} role="img" aria-label="Illustrative vehicle placeholder, vehicle photography pending approval"><div className="art-label">HUIVEX / VEHICLE</div><div className="art-road" /><div className="art-car"><i /><b /><span /></div></div>;
 }
 
 function VehicleCard({ vehicle, index, t }: { vehicle: Vehicle; index: number; t: typeof copy.en }) {
   const zh = t.home === '首页';
   const categories: Record<string, string> = { 'Flagship SUV':'旗舰SUV', 'EV Sedan':'纯电轿车', 'EV Crossover':'纯电跨界车', Toyota:'丰田', Premium:'豪华车型', Pickup:'皮卡', Gasoline:'燃油车', 'Utility / Van':'多用途厢式车', MPV:'MPV', Commercial:'商用车' };
   const descriptors: Record<string, string> = { 'Luxury full-size SUV':'豪华全尺寸SUV', 'Extended-range flagship SUV':'增程旗舰SUV', 'Next-generation flagship SUV':'新一代旗舰SUV', 'High-performance EV sedan':'高性能纯电轿车', 'Modern intelligent electric sedan':'现代智能电动轿车', 'Modern intelligent EV crossover':'现代智能电动跨界车', 'High-demand SUV':'高需求SUV', 'Compact crossover':'紧凑型跨界车', Sedan:'轿车', 'Premium mid-size SUV':'豪华中型SUV', 'Large-format vehicle for rugged markets':'面向复杂路况的大型车型', 'Spacious all-purpose vehicle':'宽敞多用途车型', 'Adventure-style gasoline SUV':'户外风格燃油SUV', 'Reliable market favorite':'可靠的市场热门车型', 'Comfortable & spacious':'舒适宽敞', 'Reliable & efficient':'可靠高效', 'Luxury & intelligent':'豪华智能', 'Heavy duty & reliable':'重载可靠', 'Strong lifting capacity':'起重能力强' };
-  const power = zh ? vehicle.powertrain.replace('EV / extended-range','纯电 / 增程').replace('Extended-range','增程').replace('EV','纯电').replace('PHEV','插电混动').replace('Gasoline','燃油').replace('Confirm with client','待确认') : vehicle.powertrain;
-  return <article className="vehicle-card"><Link href={`/vehicles/${vehicle.slug}`} className="vehicle-image-link"><VehicleArt index={index} /><span className="category-tag">{zh ? categories[vehicle.category] || vehicle.category : vehicle.category}</span><span className="card-arrow"><ArrowUpRight size={18} /></span></Link><div className="vehicle-card-copy"><span className="vehicle-brand">{vehicle.brand}</span><h3>{vehicle.model}</h3><p>{zh ? descriptors[vehicle.descriptor] || vehicle.descriptor : vehicle.descriptor}</p><div className="card-meta"><span>{power}</span>{vehicle.confirm && <span className="confirm-tag">{zh ? '信息待确认' : 'Confirm details'}</span>}</div><div className="card-links"><Link href={`/vehicles/${vehicle.slug}`}>{t.details}<ArrowRight size={14} /></Link><Link href={`/contact?vehicle=${vehicle.slug}`}>{t.request}<ArrowUpRight size={14} /></Link></div></div></article>;
+  const power = vehicle.confirm ? (zh ? '规格可按需咨询' : 'Specifications on request') : (zh ? vehicle.powertrain.replace('EV / extended-range','纯电 / 增程').replace('Extended-range','增程').replace('EV','纯电').replace('PHEV','插电混动').replace('Gasoline','燃油') : vehicle.powertrain);
+  return <article className="vehicle-card"><Link href={`/vehicles/${vehicle.slug}`} className="vehicle-image-link"><VehicleArt index={index} /><span className="category-tag">{zh ? categories[vehicle.category] || vehicle.category : vehicle.category}</span><span className="card-arrow"><ArrowUpRight size={18} /></span></Link><div className="vehicle-card-copy"><span className="vehicle-brand">{vehicle.brand}</span><h3>{vehicle.model}</h3><p>{zh ? descriptors[vehicle.descriptor] || vehicle.descriptor : vehicle.descriptor}</p><div className="card-meta"><span>{power}</span></div><div className="card-links"><Link href={`/vehicles/${vehicle.slug}`}>{t.details}<ArrowRight size={14} /></Link><Link href={`/contact?vehicle=${vehicle.slug}`}>{t.request}<ArrowUpRight size={14} /></Link></div></div></article>;
 }
 
 type HeroSlide = { small: string; title: string; text: string; action: string; href: string };
@@ -368,7 +368,7 @@ function HeroCarousel({ slides, locale, scrollLabel }: { slides: HeroSlide[]; lo
 }
 
 function FeaturedCarousel({ t, locale }: { t: typeof copy.en; locale: Locale }) {
-  const featuredVehicles = vehicles.filter((vehicle) => vehicle.featured);
+  const featuredVehicles = activeVehicles.filter((vehicle) => vehicle.featured);
   const options = useMemo(() => ({
     align: 'center' as const,
     containScroll: 'trimSnaps' as const,
@@ -472,7 +472,7 @@ function HomePage({ locale, t }: { locale: Locale; t: typeof copy.en }) {
 }
 
 function RouteGraphic() {
-  return <div className="route-graphic"><div className="map-grid" /><svg viewBox="0 0 550 300" aria-label="Illustrative trade routes from Xi'an to listed destinations"><path className="route-line" d="M275 128 Q210 70 163 83 M275 128 Q230 116 214 151 M275 128 Q351 74 393 93 M275 128 Q380 120 416 158 M275 128 Q240 195 188 213 M275 128 Q348 196 374 226" fill="none" stroke="#c9962e" strokeWidth="1.4" /><circle cx="275" cy="128" r="5" fill="#d7ad57" /><circle cx="163" cy="83" r="3" fill="#d7ad57" /><circle cx="214" cy="151" r="3" fill="#d7ad57" /><circle cx="393" cy="93" r="3" fill="#d7ad57" /><circle cx="416" cy="158" r="3" fill="#d7ad57" /><circle cx="188" cy="213" r="3" fill="#d7ad57" /><circle cx="374" cy="226" r="3" fill="#d7ad57" /><text x="287" y="121">XI’AN</text><text x="119" y="73">EUROPE / CIS</text><text x="405" y="85">MIDDLE EAST</text><text x="357" y="249">SOUTH AMERICA</text></svg><div className="route-caption">ROUTES / INDICATIVE ONLY</div></div>;
+  return <div className="route-graphic"><div className="map-grid" /><svg viewBox="0 0 550 300" aria-label="Illustrative trade routes from Xi'an to listed destinations"><path className="route-line" d="M275 128 Q210 70 163 83 M275 128 Q230 116 214 151 M275 128 Q351 74 393 93 M275 128 Q380 120 416 158 M275 128 Q240 195 188 213 M275 128 Q348 196 374 226" fill="none" stroke="#c9962e" strokeWidth="1.4" /><circle cx="275" cy="128" r="5" fill="#d7ad57" /><circle cx="163" cy="83" r="3" fill="#d7ad57" /><circle cx="214" cy="151" r="3" fill="#d7ad57" /><circle cx="393" cy="93" r="3" fill="#d7ad57" /><circle cx="416" cy="158" r="3" fill="#d7ad57" /><circle cx="188" cy="213" r="3" fill="#d7ad57" /><circle cx="374" cy="226" r="3" fill="#d7ad57" /><text x="287" y="121">XI’AN</text><text x="405" y="85">MIDDLE EAST</text><text x="357" y="249">SOUTH AMERICA</text></svg><div className="route-caption">ROUTES / INDICATIVE ONLY</div></div>;
 }
 
 function ProcessBlock({ locale, t }: { locale: Locale; t: typeof copy.en }) {
@@ -499,8 +499,8 @@ function CatalogPage({ locale, t }: { locale: Locale; t: typeof copy.en }) {
     setBrand(current.get('brand') || '');
   }, [location]);
   const categories = ['SUV','Sedan','Pickup','MPV','Van','Commercial','Premium','Toyota'];
-  const brands = [...new Set(vehicles.map(v => v.brand))];
-  const filtered = useMemo(() => vehicles.filter(v => {
+  const brands = [...new Set(activeVehicles.map(v => v.brand))];
+  const filtered = useMemo(() => activeVehicles.filter(v => {
     const catMatch = !category || `${v.category} ${v.model}`.toLowerCase().includes(category.toLowerCase()) || (category === 'SUV' && v.category.includes('SUV')) || (category === 'Van' && v.category.includes('Van'));
     const powerMatch = !power || (power === 'EV' ? v.powertrain.includes('EV') : power === 'EREV/PHEV' ? /extended|PHEV/i.test(v.powertrain) : power === 'Gasoline' ? /Gasoline/i.test(v.powertrain) : false);
     return catMatch && powerMatch && (!brand || v.brand === brand) && (!search || `${v.model} ${v.brand} ${v.category}`.toLowerCase().includes(search.toLowerCase()));
@@ -524,10 +524,10 @@ function CatalogPage({ locale, t }: { locale: Locale; t: typeof copy.en }) {
 
 function VehicleDetail({ locale, t }: { locale: Locale; t: typeof copy.en }) {
   const { slug } = useParams<{ slug: string }>();
-  const vehicle = vehicles.find(v => v.slug === slug);
+  const vehicle = activeVehicles.find(v => v.slug === slug);
   if (!vehicle) return <NotFound locale={locale} t={t} />;
-  const related = vehicles.filter(v => v.category === vehicle.category && v.slug !== vehicle.slug).slice(0, 3);
-  return <><div className="detail-top wrap"><Link href="/vehicles"><ArrowLeft size={15} />{t.catalog}</Link><span>HAG / VEHICLE FILE</span></div><section className="detail-hero wrap"><div className="detail-art"><VehicleArt index={vehicles.indexOf(vehicle)} /></div><div className="detail-copy"><span className="eyebrow">{vehicle.category} / {vehicle.brand}</span><h1 className="font-display">{vehicle.model}</h1><p className="detail-descriptor">{vehicle.descriptor}</p><div className="detail-badges"><span>{vehicle.powertrain}</span><span>{locale === 'en' ? 'Specification on request' : '规格可按需咨询'}</span></div><div className="detail-sep" /><span className="eyebrow">{t.overview}</span><p>{vehicle.descriptor}. {locale === 'en' ? 'Further model information is pending confirmation.' : '更多车型信息待确认。'}</p><Link href={`/contact?vehicle=${vehicle.slug}`} className="button button-gold">{t.request}<ArrowUpRight size={16} /></Link></div></section>
+  const related = activeVehicles.filter(v => v.category === vehicle.category && v.slug !== vehicle.slug).slice(0, 3);
+  return <><div className="detail-top wrap"><Link href="/vehicles"><ArrowLeft size={15} />{t.catalog}</Link></div><section className="detail-hero wrap"><div className="detail-art"><VehicleArt index={activeVehicles.indexOf(vehicle)} /></div><div className="detail-copy"><span className="eyebrow">{vehicle.category} / {vehicle.brand}</span><h1 className="font-display">{vehicle.model}</h1><p className="detail-descriptor">{vehicle.descriptor}</p><div className="detail-badges">{vehicle.confirm ? <span>{locale === 'en' ? 'Specifications on request' : '规格可按需咨询'}</span> : <><span>{vehicle.powertrain}</span><span>{locale === 'en' ? 'Specification on request' : '规格可按需咨询'}</span></>}</div><div className="detail-sep" /><span className="eyebrow">{t.overview}</span><p>{vehicle.descriptor}. {locale === 'en' ? 'Further model information is pending confirmation.' : '更多车型信息待确认。'}</p><Link href={`/contact?vehicle=${vehicle.slug}`} className="button button-gold">{t.request}<ArrowUpRight size={16} /></Link></div></section>
     <section className="detail-support"><div className="wrap support-inner"><div><span className="eyebrow">HAG / EXPORT SUPPORT</span><h2 className="font-display">{t.included}</h2><p>{t.available}</p></div><ul>{[t.vin,t.document,t.load,t.track].map((x,i)=><li key={x}><span>0{i+1}</span>{x}<Check size={15}/></li>)}</ul></div></section>
     {related.length > 0 && <section className="section-space wrap"><div className="section-heading"><div><span className="eyebrow">{locale === 'en' ? 'Related range' : '相关车型'}</span><h2 className="font-display">{locale === 'en' ? 'Continue exploring' : '继续浏览'}</h2></div></div><div className="featured-grid">{related.map((v,i)=><VehicleCard key={v.slug} vehicle={v} index={i+1} t={t}/>)}</div></section>}
   </>;
@@ -569,7 +569,7 @@ function QuoteForm({ locale, t, presetType = 'vehicle-quote', initialVehicle = '
     <div className="form-two"><label>{locale === 'en' ? 'Full name' : '姓名'}<span>*</span><input autoComplete="name" required name="name" value={formName} onChange={e=>setFormName(e.target.value)} placeholder={locale === 'en' ? 'Your name' : '请输入姓名'} /></label><label>{locale === 'en' ? 'Company' : '公司'}<input autoComplete="organization" name="company" placeholder={locale === 'en' ? 'Company name (optional)' : '公司名称（选填）'} /></label></div>
     <div className="form-two"><label>{locale === 'en' ? 'Country / region' : '国家 / 地区'}<span>*</span><select value={country} onChange={e=>setCountry(e.target.value)} required><option value="">{locale === 'en' ? 'Select destination country' : '选择目的地国家'}</option>{destinationCountries.map(c=><option key={c.code} value={c.code}>{locale === 'en' ? c.en : c.zh} · {c.code}</option>)}</select></label><label>{locale === 'en' ? 'Inquiry type' : '询价类型'}<select name="inquiryType" defaultValue={presetType}><option value="vehicle-quote">{locale === 'en' ? 'Vehicle quote' : '车辆报价'}</option><option value="showroom-partner">{locale === 'en' ? 'Showroom partnership' : '展厅合作'}</option><option value="other">{locale === 'en' ? 'Other' : '其他'}</option></select></label></div>
     <div className="form-two"><label>{locale === 'en' ? 'Email' : '电子邮箱'}<input type="email" inputMode="email" autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="name@company.com" /></label><label>{locale === 'en' ? 'Phone / WhatsApp' : '电话 / WhatsApp'}<input type="tel" inputMode="tel" autoComplete="tel" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="+__  ________" /></label></div>
-    <div className="form-two"><label>{locale === 'en' ? 'Vehicles of interest' : '意向车型'}<select value="" onChange={e=>{if(e.target.value&&!selectedVehicles.includes(e.target.value))setSelectedVehicles([...selectedVehicles,e.target.value]);}}><option value="">{locale === 'en' ? 'Add a vehicle' : '添加车型'}</option>{vehicles.map(v=><option key={v.slug} value={v.slug}>{v.model}</option>)}</select><div className="chosen-vehicles">{selectedVehicles.map(v=><button type="button" key={v} onClick={()=>setSelectedVehicles(selectedVehicles.filter(x=>x!==v))}>{vehicles.find(x=>x.slug===v)?.model || v}<X size={12}/></button>)}</div></label><label>{locale === 'en' ? 'Quantity' : '采购数量'}<select name="quantity"><option value="">{locale === 'en' ? 'Select quantity' : '选择数量'}</option><option value="1">1</option><option value="2-5">2–5</option><option value="6-20">6–20</option><option value="20+">20+</option></select></label></div>
+    <div className="form-two"><label>{locale === 'en' ? 'Vehicles of interest' : '意向车型'}<select value="" onChange={e=>{if(e.target.value&&!selectedVehicles.includes(e.target.value))setSelectedVehicles([...selectedVehicles,e.target.value]);}}><option value="">{locale === 'en' ? 'Add a vehicle' : '添加车型'}</option>{activeVehicles.map(v=><option key={v.slug} value={v.slug}>{v.model}</option>)}</select><div className="chosen-vehicles">{selectedVehicles.map(v=><button type="button" key={v} onClick={()=>setSelectedVehicles(selectedVehicles.filter(x=>x!==v))}>{activeVehicles.find(x=>x.slug===v)?.model || vehicles.find(x=>x.slug===v)?.model || v}<X size={12}/></button>)}</div></label><label>{locale === 'en' ? 'Quantity' : '采购数量'}<select name="quantity"><option value="">{locale === 'en' ? 'Select quantity' : '选择数量'}</option><option value="1">1</option><option value="2-5">2–5</option><option value="6-20">6–20</option><option value="20+">20+</option></select></label></div>
     <label>{locale === 'en' ? 'Destination country / port' : '目的地国家 / 港口'}<input name="destination" placeholder={locale === 'en' ? 'Optional' : '选填'} /></label>
     <label>{locale === 'en' ? 'Message' : '留言'}<textarea name="message" maxLength={2000} rows={4} placeholder={locale === 'en' ? 'Models, requirements or questions (optional)' : '车型、需求或问题（选填）'} /></label>
     <label className="honeypot" aria-hidden="true">Website<input name="hp" tabIndex={-1} autoComplete="off" /></label>
@@ -614,7 +614,7 @@ function AppRouter() {
   const query = location.split('?')[1] || '';
   useEffect(() => {
     const path = location.split('?')[0];
-    const vehicle = path.startsWith('/vehicles/') ? vehicles.find((item) => item.slug === path.split('/')[2]) : undefined;
+    const vehicle = path.startsWith('/vehicles/') ? activeVehicles.find((item) => item.slug === path.split('/')[2]) : undefined;
     const pageNames: Record<string, [string, string]> = {
       '/': ['Export Cars from China', '从中国出口汽车'],
       '/vehicles': ['Vehicles for Export', '出口车型'],
