@@ -16,8 +16,35 @@
   - Standardized powertrain spec for `confirm: true` vehicles to `"Specifications on request"` (EN) / `"规格可按需咨询"` (ZH).
 - **Housekeeping**:
   - Deleted obsolete `artifacts/huivex-auto/public/brand/README.txt`.
-  - Typecheck: 0 errors.
-  - Playwright test suite: All 24 tests passed cleanly across viewports and locales.
+
+## Mobile Catalog Bug & Content Refinements (Prompt Part 2 — Completed & Verified)
+1. **Mobile Catalog Vehicle Bug Fix**:
+   - **Root Cause**: An arbitrary CSS rule in `artifacts/huivex-auto/src/index.css` inside the `@media (max-width: 850px)` media block: `.catalog-grid .vehicle-card:nth-child(n+4) { display: none; }` hid all vehicle cards past the third one, despite the heading displaying 15.
+   - **Fix**: Removed the truncation CSS rule so all 15 active vehicles render. Added 4 Playwright tests in `tests/catalog-mobile.spec.mjs` verifying all 15 active vehicles are visible on 390x844, 844x390, 360x640, and 640x360 viewports.
+2. **Vehicle Detail Content Fixes (EN & ZH)**:
+   - Removed the `"HUIVEX / VEHICLE"` label from `VehicleArt`.
+   - Replaced all unapproved `"pending confirmation"` phrases in public UI with: `"Full specifications and availability are confirmed on quotation."` (EN) / `"完整规格与供货情况将在报价时确认。"` (ZH).
+   - Removed the internal `"PUBLIC CONTACT DETAILS PENDING APPROVAL"` banner from the contact page sidebar.
+3. **Quote Form — Unlisted Vehicles & Graceful Fallback**:
+   - Added `"Other / not listed (tell us what you need)"` (EN) and `"其他 / 未列出（请说明需求）"` (ZH) to the quote form's vehicle picker dropdown.
+   - When chosen, renders an inline text input (`maxlength="300"`) for the custom model description.
+   - Added `otherVehicle` (nullable `varchar(300)`) to the database schema (`quote_inquiries`), OpenAPI specification, generated Zod schemas, React API client types, Express POST route handler, and business notification email formatter.
+   - Handled `?vehicle=<slug>` URL parameters safely: unrecognized or draft slugs fall back gracefully to the empty state without crashing or selecting unapproved models.
+4. **Search Engine Demo Safety**:
+   - Added `<meta name="robots" content="noindex, nofollow" />` to `index.html`.
+   - Updated `public/robots.txt` to `User-agent: *` with `Disallow: /`.
+5. **Playwright Automated Test Suite**:
+   - Added `tests/unlisted-and-drafts.spec.mjs` verifying:
+     - Direct navigation to all 6 draft vehicle URLs routes to the 404 page.
+     - Active vehicle detail pages load cleanly.
+     - The quote form vehicle picker excludes all 6 draft models while retaining active models and the "Other" option.
+     - Direct visits to `/contact?vehicle=<draft-slug>` fall back gracefully without crashing.
+     - Submitting an "Other / not listed" quote sends `otherVehicle` to the API with mocked email delivery.
+   - **Total Test Count**: **33 / 33 tests passing** (4 mobile catalog visibility + 4 hero landscape/touch + 20 cross-viewport/bilingual layout + 5 unlisted/draft e2e tests).
+6. **Documentation & Housekeeping**:
+   - Added `.pnpm-store/` to root `.gitignore`.
+   - Created root `README.md` documenting architecture, prerequisites, local setup (Docker Compose, `.env`, pnpm run commands), mobile phone Wi-Fi network testing, test runner commands, and doc references.
+   - Updated `docs/OPEN_QUESTIONS.md` (and synced `artifacts/huivex-auto/OPEN_QUESTIONS.md`) covering Resend domain and sender verification, client contact details, English office address, vehicle launch roster, new vs used positioning, deck photography rights, brand logo usage rights, team track record wording ("6,000+"), privacy/terms approval, and production domain rollout.
 
 ## Launch Checklist
 - [ ] Remove `<meta name="robots" content="noindex, nofollow">` from `index.html`
@@ -26,6 +53,3 @@
 - [ ] Rotate the Resend API key
 - [ ] Verify the custom sender domain in Resend
 - [ ] Set real, approved client contact details (phone, email, WeChat ID, English office address)
-
-## Next Steps
-- Frontend improvements and UI design refinements.
