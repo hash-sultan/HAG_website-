@@ -51,6 +51,18 @@
 - **Contact Sidebar Notice**: Restored `<small className="pending-label">PUBLIC CONTACT DETAILS PENDING APPROVAL</small>` to `artifacts/huivex-auto/src/App.tsx`.
 - **Live End-to-End Test (No Mocks)**: Sent a real `POST /api/quotes` request with `otherVehicle: "BYD Yangwang U9 supercar in bespoke yellow"`. Received HTTP 201 (`id: 4`). Verified row in PostgreSQL with `other_vehicle` populated and confirmed transactional email delivery via Resend API (`email_status: "sent"`).
 
+## Reveal Scroll Animation Component (Completed & Verified)
+- **Component**: Created reusable `Reveal` component (`artifacts/huivex-auto/src/components/ui/Reveal.tsx`) powered by `framer-motion` (`whileInView`, `viewport: { once: true, margin: '0px 0px -10% 0px' }`, 0.6s cubic bezier ease, fade + 24px rise) with full `useReducedMotion` fallback support.
+- **Section Wrapping**: Wrapped major content sections across Home, Vehicles, Services, Markets, and About in `<Reveal>`, while explicitly preserving:
+  - Hero carousel (`HeroCarousel`)
+  - Quote forms (`QuoteForm`)
+  - Quote bar and header navigation (`SiteHeader`)
+  - Mobile drawer portal
+  - Grid structures (wrapping complete grid blocks rather than individual child selectors to maintain styling and layout integrity).
+- **Verification**:
+  - TypeScript typecheck passed cleanly with zero errors.
+  - Full Playwright E2E test suite (33/33 tests) passed across mobile and desktop viewports in English and Chinese.
+
 ## Launch Checklist
 - [ ] Remove `<meta name="robots" content="noindex, nofollow">` from `index.html`
 - [ ] Remove `Disallow: /` from `public/robots.txt` and allow search engine indexing
