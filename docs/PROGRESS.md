@@ -19,5 +19,13 @@
   - Typecheck: 0 errors.
   - Playwright test suite: All 24 tests passed cleanly across viewports and locales.
 
+## Launch Checklist
+- [ ] Remove `<meta name="robots" content="noindex, nofollow">` from `index.html`
+- [ ] Remove `Disallow: /` from `public/robots.txt` and allow search engine indexing
+- [ ] Add canonical tags, production XML sitemap (`/sitemap.xml`), and finalized `og:image`
+- [ ] Rotate the Resend API key
+- [ ] Verify the custom sender domain in Resend
+- [ ] Set real, approved client contact details (phone, email, WeChat ID, English office address)
+
 ## Next Steps
 - Frontend improvements and UI design refinements.
