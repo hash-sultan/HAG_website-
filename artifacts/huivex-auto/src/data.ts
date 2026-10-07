@@ -1,6 +1,6 @@
 export type Vehicle = {
   slug: string; model: string; category: string; brand: string; descriptor: string;
-  powertrain: string; featured?: boolean; confirm?: boolean;
+  powertrain: string; featured?: boolean; confirm?: boolean; status?: 'active' | 'draft';
 };
 
 export const vehicles: Vehicle[] = [
@@ -19,13 +19,16 @@ export const vehicles: Vehicle[] = [
   { slug: 'nissan-frontier-pro-phev', model: 'Nissan Frontier Pro PHEV', category: 'Pickup', brand: 'Nissan', descriptor: 'Spacious all-purpose vehicle', powertrain: 'PHEV', confirm: true },
   { slug: 'jetour-traveler', model: 'Jetour Traveler', category: 'Gasoline', brand: 'Jetour', descriptor: 'Adventure-style gasoline SUV', powertrain: 'Gasoline' },
   { slug: 'geely-coolray-15t', model: 'Geely Coolray 1.5T', category: 'Gasoline', brand: 'Geely', descriptor: 'Reliable market favorite', powertrain: 'Gasoline', featured: true },
-  { slug: 'chinese-passenger-van', model: 'Chinese Passenger Van', category: 'Utility / Van', brand: 'Multiple brands', descriptor: 'Comfortable & spacious', powertrain: 'Confirm with client', confirm: true },
-  { slug: 'chinese-commercial-van', model: 'Chinese Commercial Van', category: 'Utility / Van', brand: 'Multiple brands', descriptor: 'Reliable & efficient', powertrain: 'Confirm with client', confirm: true },
-  { slug: 'gac-gasoline-mpv', model: 'GAC Gasoline MPV', category: 'MPV', brand: 'GAC', descriptor: 'Comfortable & spacious', powertrain: 'Gasoline' },
-  { slug: 'denza-ev-mpv', model: 'Denza EV MPV', category: 'MPV', brand: 'Denza', descriptor: 'Luxury & intelligent', powertrain: 'EV' },
-  { slug: 'howo-truck', model: 'HOWO Truck', category: 'Commercial', brand: 'HOWO', descriptor: 'Heavy duty & reliable', powertrain: 'Confirm with client', confirm: true },
-  { slug: 'commercial-crane', model: 'Commercial Crane', category: 'Commercial', brand: 'Multiple brands', descriptor: 'Strong lifting capacity', powertrain: 'Confirm with client', confirm: true },
+  { slug: 'chinese-passenger-van', model: 'Chinese Passenger Van', category: 'Utility / Van', brand: 'Multiple brands', descriptor: 'Comfortable & spacious', powertrain: 'Confirm with client', confirm: true, status: 'draft' },
+  { slug: 'chinese-commercial-van', model: 'Chinese Commercial Van', category: 'Utility / Van', brand: 'Multiple brands', descriptor: 'Reliable & efficient', powertrain: 'Confirm with client', confirm: true, status: 'draft' },
+  { slug: 'gac-gasoline-mpv', model: 'GAC Gasoline MPV', category: 'MPV', brand: 'GAC', descriptor: 'Comfortable & spacious', powertrain: 'Gasoline', status: 'draft' },
+  { slug: 'denza-ev-mpv', model: 'Denza EV MPV', category: 'MPV', brand: 'Denza', descriptor: 'Luxury & intelligent', powertrain: 'EV', status: 'draft' },
+  { slug: 'howo-truck', model: 'HOWO Truck', category: 'Commercial', brand: 'HOWO', descriptor: 'Heavy duty & reliable', powertrain: 'Confirm with client', confirm: true, status: 'draft' },
+  { slug: 'commercial-crane', model: 'Commercial Crane', category: 'Commercial', brand: 'Multiple brands', descriptor: 'Strong lifting capacity', powertrain: 'Confirm with client', confirm: true, status: 'draft' },
 ];
+
+/** Vehicles visible to the public — excludes drafts. */
+export const activeVehicles = vehicles.filter(v => v.status !== 'draft');
 
 // Confirm these public contact details and operational values before launch.
 export const businessConfig = {
