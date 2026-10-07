@@ -8,6 +8,7 @@ export type QuoteEmailDetails = {
   phone: string | null;
   inquiryType: string;
   vehicles: string[];
+  otherVehicle?: string | null;
   quantity: string | null;
   destination: string | null;
   message: string | null;
@@ -41,6 +42,7 @@ function formatQuote(details: QuoteEmailDetails): string {
     `Phone: ${details.phone || "—"}`,
     `Inquiry type: ${details.inquiryType}`,
     `Vehicles: ${details.vehicles.join(", ") || "—"}`,
+    `Other vehicle: ${details.otherVehicle || "—"}`,
     `Quantity: ${details.quantity || "—"}`,
     `Destination: ${details.destination || "—"}`,
     `Message: ${details.message || "—"}`,

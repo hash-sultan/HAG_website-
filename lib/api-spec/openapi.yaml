@@ -105,6 +105,9 @@ components:
           items:
             type: string
             maxLength: 120
+        otherVehicle:
+          type: string
+          maxLength: 300
         quantity:
           type: string
           enum: ["1", "2-5", "6-20", "20+"]

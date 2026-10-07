@@ -33,6 +33,8 @@ export interface QuoteInput {
      * @items.maxLength 120
      */
   vehicles: string[];
+  /** @maxLength 300 */
+  otherVehicle?: string;
   quantity?: QuoteInputQuantity;
   /** @maxLength 200 */
   destination?: string;

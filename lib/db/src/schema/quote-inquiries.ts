@@ -12,6 +12,7 @@ export const quoteInquiriesTable = pgTable("quote_inquiries", {
   phone: varchar("phone", { length: 40 }),
   inquiryType: varchar("inquiry_type", { length: 32 }).notNull(),
   vehicles: text("vehicles").array().notNull().default([]),
+  otherVehicle: varchar("other_vehicle", { length: 300 }),
   quantity: varchar("quantity", { length: 16 }),
   destination: varchar("destination", { length: 200 }),
   message: varchar("message", { length: 2000 }),

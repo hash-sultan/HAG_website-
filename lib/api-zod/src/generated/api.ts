@@ -36,6 +36,8 @@ export const createQuoteBodyVehiclesItemMax = 120;
 
 export const createQuoteBodyVehiclesMax = 20;
 
+export const createQuoteBodyOtherVehicleMax = 300;
+
 export const createQuoteBodyDestinationMax = 200;
 
 export const createQuoteBodyMessageMax = 2000;
@@ -53,6 +55,7 @@ export const CreateQuoteBody = zod.object({
   "phone": zod.string().max(createQuoteBodyPhoneMax).optional(),
   "inquiryType": zod.enum(['vehicle-quote', 'showroom-partner', 'other']),
   "vehicles": zod.array(zod.string().max(createQuoteBodyVehiclesItemMax)).max(createQuoteBodyVehiclesMax),
+  "otherVehicle": zod.string().max(createQuoteBodyOtherVehicleMax).optional(),
   "quantity": zod.enum(['1', '2-5', '6-20', '20+']).optional(),
   "destination": zod.string().max(createQuoteBodyDestinationMax).optional(),
   "message": zod.string().max(createQuoteBodyMessageMax).optional(),

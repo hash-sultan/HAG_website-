@@ -533,6 +533,7 @@ function VehicleDetail({ locale, t }: { locale: Locale; t: typeof copy.en }) {
   </>;
 }
 
+const OTHER_VEHICLE_KEY = '__other__';
 function QuoteForm({ locale, t, presetType = 'vehicle-quote', initialVehicle = '' }: { locale: Locale; t: typeof copy.en; presetType?: QuoteInput['inquiryType']; initialVehicle?: string }) {
   const mutation = useCreateQuote();
   const [sent, setSent] = useState<number | null>(null);
@@ -541,8 +542,11 @@ function QuoteForm({ locale, t, presetType = 'vehicle-quote', initialVehicle = '
   const [phone, setPhone] = useState('');
   const [country, setCountry] = useState('');
   const [formName, setFormName] = useState('');
-  const [selectedVehicles, setSelectedVehicles] = useState(initialVehicle ? [initialVehicle] : []);
-  useEffect(() => { if (initialVehicle) setSelectedVehicles([initialVehicle]); }, [initialVehicle]);
+  const [otherVehicleText, setOtherVehicleText] = useState('');
+  // Guard: only pre-populate if the slug is a known active vehicle, or explicitly other
+  const validInitial = activeVehicles.some(v => v.slug === initialVehicle) ? initialVehicle : (initialVehicle === 'other' || initialVehicle === OTHER_VEHICLE_KEY ? OTHER_VEHICLE_KEY : '');
+  const [selectedVehicles, setSelectedVehicles] = useState(validInitial ? [validInitial] : []);
+  useEffect(() => { const v = activeVehicles.some(x => x.slug === initialVehicle) ? initialVehicle : (initialVehicle === 'other' || initialVehicle === OTHER_VEHICLE_KEY ? OTHER_VEHICLE_KEY : ''); setSelectedVehicles(v ? [v] : []); }, [initialVehicle]);
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault(); setError('');
     if (!country) { setError(locale === 'en' ? 'Choose a country to continue.' : '请选择国家或地区。'); return; }
@@ -556,7 +560,8 @@ function QuoteForm({ locale, t, presetType = 'vehicle-quote', initialVehicle = '
       ...(String(fd.get('company') || '').trim() ? { company: String(fd.get('company')).trim() } : {}),
       ...(email.trim() ? { email: email.trim() } : {}), ...(phone.trim() ? { phone: phone.trim() } : {}),
       inquiryType: String(fd.get('inquiryType') || presetType) as QuoteInput['inquiryType'],
-      vehicles: selectedVehicles,
+      vehicles: selectedVehicles.map(v => v === OTHER_VEHICLE_KEY ? `Other: ${otherVehicleText.trim().slice(0, 100)}` : v).filter(Boolean),
+      ...(selectedVehicles.includes(OTHER_VEHICLE_KEY) && otherVehicleText.trim() ? { otherVehicle: otherVehicleText.trim() } : {}),
       ...(String(fd.get('quantity') || '') ? { quantity: String(fd.get('quantity')) as QuoteInput['quantity'] } : {}),
       ...(String(fd.get('destination') || '').trim() ? { destination: String(fd.get('destination')).trim() } : {}),
       ...(String(fd.get('message') || '').trim() ? { message: String(fd.get('message')).trim() } : {}),
@@ -569,7 +574,7 @@ function QuoteForm({ locale, t, presetType = 'vehicle-quote', initialVehicle = '
     <div className="form-two"><label>{locale === 'en' ? 'Full name' : '姓名'}<span>*</span><input autoComplete="name" required name="name" value={formName} onChange={e=>setFormName(e.target.value)} placeholder={locale === 'en' ? 'Your name' : '请输入姓名'} /></label><label>{locale === 'en' ? 'Company' : '公司'}<input autoComplete="organization" name="company" placeholder={locale === 'en' ? 'Company name (optional)' : '公司名称（选填）'} /></label></div>
     <div className="form-two"><label>{locale === 'en' ? 'Country / region' : '国家 / 地区'}<span>*</span><select value={country} onChange={e=>setCountry(e.target.value)} required><option value="">{locale === 'en' ? 'Select destination country' : '选择目的地国家'}</option>{destinationCountries.map(c=><option key={c.code} value={c.code}>{locale === 'en' ? c.en : c.zh} · {c.code}</option>)}</select></label><label>{locale === 'en' ? 'Inquiry type' : '询价类型'}<select name="inquiryType" defaultValue={presetType}><option value="vehicle-quote">{locale === 'en' ? 'Vehicle quote' : '车辆报价'}</option><option value="showroom-partner">{locale === 'en' ? 'Showroom partnership' : '展厅合作'}</option><option value="other">{locale === 'en' ? 'Other' : '其他'}</option></select></label></div>
     <div className="form-two"><label>{locale === 'en' ? 'Email' : '电子邮箱'}<input type="email" inputMode="email" autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="name@company.com" /></label><label>{locale === 'en' ? 'Phone / WhatsApp' : '电话 / WhatsApp'}<input type="tel" inputMode="tel" autoComplete="tel" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="+__  ________" /></label></div>
-    <div className="form-two"><label>{locale === 'en' ? 'Vehicles of interest' : '意向车型'}<select value="" onChange={e=>{if(e.target.value&&!selectedVehicles.includes(e.target.value))setSelectedVehicles([...selectedVehicles,e.target.value]);}}><option value="">{locale === 'en' ? 'Add a vehicle' : '添加车型'}</option>{activeVehicles.map(v=><option key={v.slug} value={v.slug}>{v.model}</option>)}</select><div className="chosen-vehicles">{selectedVehicles.map(v=><button type="button" key={v} onClick={()=>setSelectedVehicles(selectedVehicles.filter(x=>x!==v))}>{activeVehicles.find(x=>x.slug===v)?.model || vehicles.find(x=>x.slug===v)?.model || v}<X size={12}/></button>)}</div></label><label>{locale === 'en' ? 'Quantity' : '采购数量'}<select name="quantity"><option value="">{locale === 'en' ? 'Select quantity' : '选择数量'}</option><option value="1">1</option><option value="2-5">2–5</option><option value="6-20">6–20</option><option value="20+">20+</option></select></label></div>
+    <div className="form-two"><label>{locale === 'en' ? 'Vehicles of interest' : '意向车型'}<select value="" onChange={e=>{if(e.target.value&&!selectedVehicles.includes(e.target.value))setSelectedVehicles([...selectedVehicles,e.target.value]);}}><option value="">{locale === 'en' ? 'Add a vehicle' : '添加车型'}</option>{activeVehicles.map(v=><option key={v.slug} value={v.slug}>{v.model}</option>)}<option value={OTHER_VEHICLE_KEY}>{locale === 'en' ? 'Other / not listed (tell us what you need)' : '其他 / 未列出（请说明需求）'}</option></select><div className="chosen-vehicles">{selectedVehicles.map(v=><button type="button" key={v} onClick={()=>{setSelectedVehicles(selectedVehicles.filter(x=>x!==v)); if(v===OTHER_VEHICLE_KEY)setOtherVehicleText('');}}>{v===OTHER_VEHICLE_KEY ? (locale==='en'?'Other / not listed':'其他 / 未列出') : (activeVehicles.find(x=>x.slug===v)?.model || v)}<X size={12}/></button>)}</div>{selectedVehicles.includes(OTHER_VEHICLE_KEY) && <input className="other-vehicle-input" maxLength={300} value={otherVehicleText} onChange={e=>setOtherVehicleText(e.target.value)} placeholder={locale==='en'?'Describe the model you are looking for (max 300 chars)':'请描述您所需的车型（最多300字）'} />}</label><label>{locale === 'en' ? 'Quantity' : '采购数量'}<select name="quantity"><option value="">{locale === 'en' ? 'Select quantity' : '选择数量'}</option><option value="1">1</option><option value="2-5">2–5</option><option value="6-20">6–20</option><option value="20+">20+</option></select></label></div>
     <label>{locale === 'en' ? 'Destination country / port' : '目的地国家 / 港口'}<input name="destination" placeholder={locale === 'en' ? 'Optional' : '选填'} /></label>
     <label>{locale === 'en' ? 'Message' : '留言'}<textarea name="message" maxLength={2000} rows={4} placeholder={locale === 'en' ? 'Models, requirements or questions (optional)' : '车型、需求或问题（选填）'} /></label>
     <label className="honeypot" aria-hidden="true">Website<input name="hp" tabIndex={-1} autoComplete="off" /></label>
