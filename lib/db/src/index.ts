@@ -16,3 +16,4 @@ export const db = drizzle(pool, { schema });
 
 export * from "./schema";
 export * from "./rate-limit";
+export { sql, eq } from "drizzle-orm";
