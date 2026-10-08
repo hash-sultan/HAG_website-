@@ -1,18 +1,8 @@
-import type { IncomingMessage, ServerResponse } from "http";
+import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { db, quoteInquiriesTable, checkDatabaseRateLimit } from "@workspace/db";
 import { CreateQuoteBody, CreateQuoteResponse } from "@workspace/api-zod";
 import { eq } from "drizzle-orm";
 import { sendQuoteEmails } from "./_lib/quote-email";
-
-interface VercelRequest extends IncomingMessage {
-  body?: any;
-  query?: Record<string, string | string[]>;
-}
-
-interface VercelResponse extends ServerResponse {
-  status(statusCode: number): this;
-  json(body: any): this;
-}
 
 function getClientIp(req: VercelRequest): string {
   const forwarded = req.headers["x-forwarded-for"];

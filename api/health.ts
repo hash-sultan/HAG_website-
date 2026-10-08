@@ -1,14 +1,9 @@
-import type { IncomingMessage, ServerResponse } from "http";
+import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { db } from "@workspace/db";
 import { sql } from "drizzle-orm";
 
-interface VercelResponse extends ServerResponse {
-  status(statusCode: number): this;
-  json(body: any): this;
-}
-
 export default async function handler(
-  _req: IncomingMessage,
+  _req: VercelRequest,
   res: VercelResponse,
 ) {
   try {
