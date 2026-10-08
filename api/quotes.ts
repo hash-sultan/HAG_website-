@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { db, eq, quoteInquiriesTable, checkDatabaseRateLimit } from "./_lib/db";
-import { CreateQuoteBody, CreateQuoteResponse } from "./_lib/quote-schema";
-import { sendQuoteEmails } from "./_lib/quote-email";
+import { db, eq, quoteInquiriesTable, checkDatabaseRateLimit } from "./_lib/db.js";
+import { CreateQuoteBody, CreateQuoteResponse } from "./_lib/quote-schema.js";
+import { sendQuoteEmails } from "./_lib/quote-email.js";
 
 function getClientIp(req: VercelRequest): string {
   const forwarded = req.headers["x-forwarded-for"];
