@@ -723,7 +723,7 @@
   position: absolute;
   inset: -6%;
   background: url('/export-hero.jpg') center / cover no-repeat;
-  animation: hero-drift 24s ease-in-out infinite alternate;
+  animation: hero-drift 16s ease-in-out infinite alternate;
   will-change: transform;
 }
 
