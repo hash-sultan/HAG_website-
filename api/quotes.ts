@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { db, eq, quoteInquiriesTable, checkDatabaseRateLimit } from "@workspace/db";
-import { CreateQuoteBody, CreateQuoteResponse } from "@workspace/api-zod";
+import { db, eq, quoteInquiriesTable, checkDatabaseRateLimit } from "./_lib/db";
+import { CreateQuoteBody, CreateQuoteResponse } from "./_lib/quote-schema";
 import { sendQuoteEmails } from "./_lib/quote-email";
 
 function getClientIp(req: VercelRequest): string {
