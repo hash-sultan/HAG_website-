@@ -10,7 +10,10 @@
   },
   "private": true,
   "dependencies": {
-    "@replit/connectors-sdk": "^0.4.3"
+    "@replit/connectors-sdk": "^0.4.3",
+    "drizzle-orm": "catalog:",
+    "pg": "^8.23.0",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@types/node": "^22.16.4",
