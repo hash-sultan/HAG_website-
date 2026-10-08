@@ -1,13 +1,10 @@
-import { db, quoteInquiriesTable } from "@workspace/db";
+import { checkDatabaseRateLimit, db, quoteInquiriesTable } from "@workspace/db";
 import { CreateQuoteBody, CreateQuoteResponse } from "@workspace/api-zod";
 import { eq } from "drizzle-orm";
 import { Router, type IRouter, type Request } from "express";
 import { sendQuoteEmails } from "./quote-email";
 
 const router: IRouter = Router();
-const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
-const RATE_LIMIT_MAX_REQUESTS = 5;
-const requestWindows = new Map<string, { startedAt: number; count: number }>();
 
 function clientIp(req: Request): string {
   const forwarded = req.ip?.trim();
@@ -18,23 +15,11 @@ function clientIp(req: Request): string {
 }
 
 router.post("/quotes", async (req, res): Promise<void> => {
-  const now = Date.now();
   const key = clientIp(req);
-  const window = requestWindows.get(key);
-
-  if (!window || now - window.startedAt >= RATE_LIMIT_WINDOW_MS) {
-    requestWindows.set(key, { startedAt: now, count: 1 });
-  } else if (window.count >= RATE_LIMIT_MAX_REQUESTS) {
+  const rateLimit = await checkDatabaseRateLimit(key);
+  if (!rateLimit.allowed) {
     res.status(429).json({ error: "Too many inquiries. Please try again later." });
     return;
-  } else {
-    window.count += 1;
-  }
-
-  if (requestWindows.size > 10_000) {
-    for (const [ip, entry] of requestWindows) {
-      if (now - entry.startedAt >= RATE_LIMIT_WINDOW_MS) requestWindows.delete(ip);
-    }
   }
 
   if (typeof req.body?.hp === "string" && req.body.hp.length > 0) {

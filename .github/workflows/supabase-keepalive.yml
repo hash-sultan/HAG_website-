@@ -1,0 +1,18 @@
+name: Supabase Keep-Alive
+
+on:
+  schedule:
+    # Runs at 08:00 UTC every 3 days (Supabase free tier auto-pauses after 7 days without queries)
+    - cron: '0 8 */3 * *'
+  workflow_dispatch: # Allows manual trigger anytime from GitHub Actions tab
+
+jobs:
+  keepalive:
+    name: Ping API Health (Runs SELECT 1)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Health Endpoint
+        run: |
+          URL="${{ secrets.VERCEL_SITE_URL || 'https://huivex-auto.vercel.app' }}/api/health"
+          echo "Pinging health endpoint at $URL..."
+          curl -fsS -m 30 "$URL"

@@ -63,6 +63,26 @@
   - TypeScript typecheck passed cleanly with zero errors.
   - Full Playwright E2E test suite (33/33 tests) passed across mobile and desktop viewports in English and Chinese.
 
+## Vercel & Supabase Migration Preparation (Completed & Verified)
+- **Database-Backed Rate Limiting (No Redis)**:
+  - Created `rate_limits` table in `@workspace/db` schema (`key varchar(128)`, `count integer`, `reset_at timestamptz`).
+  - Added atomic `checkDatabaseRateLimit()` helper function with automatic window expiry pruning.
+  - Migrated both local Express server and Vercel serverless handler to use persistent PostgreSQL rate limiting, completely eliminating Redis dependency.
+  - Successfully pushed schema to PostgreSQL via `drizzle-kit push`.
+- **Vercel Serverless Functions (`/api`)**:
+  - `api/quotes.ts`: Serverless quotation handler with database rate limiting, honeypot validation, Zod validation, PostgreSQL inquiry persistence, and Resend transactional email dispatch.
+  - `api/health.ts`: Serverless health check pinging PostgreSQL with `SELECT 1` to verify connectivity and prevent Supabase project auto-pause.
+  - `api/_lib/quote-email.ts`: Transactional email sending helper using Resend REST API with graceful error handling.
+- **Vercel Monorepo Configuration (`vercel.json`)**:
+  - Configured Vite build command (`pnpm --filter @workspace/huivex-auto run build`) and output directory (`artifacts/huivex-auto/dist/public`).
+  - Configured routing rules preserving `/api/(.*)` serverless execution and rewriting SPA client paths to `/index.html`.
+- **Supabase Keep-Alive GitHub Action (`.github/workflows/supabase-keepalive.yml`)**:
+  - Scheduled cron running every 3 days at 08:00 UTC to ping `/api/health` and keep the free Supabase database from going inactive.
+- **Verification**:
+  - TypeScript build (`tsc --build`) and app typecheck passed cleanly with 0 errors.
+  - Production bundle generated cleanly (`vite build` in 38s).
+  - All 33 Playwright E2E tests passing.
+
 ## Launch Checklist
 - [ ] Remove `<meta name="robots" content="noindex, nofollow">` from `index.html`
 - [ ] Remove `Disallow: /` from `public/robots.txt` and allow search engine indexing
